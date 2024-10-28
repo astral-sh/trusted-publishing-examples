@@ -1,0 +1,177 @@
+# Test the error messages when the trusted publishing configuration is incorrect
+name: Release wrong name
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "The commit SHA, tag, or branch of uv. Uses the last release if not specified."
+        default: ""
+        type: string
+
+jobs:
+  get-binary-linux:
+    runs-on: ubuntu-latest
+    name: Get binary
+    steps:
+      - if: ${{ inputs.ref }}
+        uses: actions/checkout@v4
+        with:
+          repository: "astral-sh/uv"
+          ref: ${{ inputs.ref }}
+
+      - if: ${{ inputs.ref }}
+        uses: rui314/setup-mold@v1
+      - if: ${{ inputs.ref }}
+        name: Setup musl
+        run: |
+          sudo apt-get install musl-tools
+          rustup target add x86_64-unknown-linux-musl
+      - if: ${{ inputs.ref }}
+        uses: Swatinem/rust-cache@v2
+      - if: ${{ inputs.ref }}
+        name: Build uv
+        run: cargo build --target x86_64-unknown-linux-musl
+      - if: ${{ inputs.ref }}
+        name: Strip uv
+        run: strip ./target/x86_64-unknown-linux-musl/debug/uv
+
+      - if: ${{ inputs.ref }}
+        name: Upload uv
+        uses: actions/upload-artifact@v4
+        with:
+          name: uv
+          path: ./target/x86_64-unknown-linux-musl/debug/uv
+
+      - if: ${{ !inputs.ref }}
+        run: |
+          wget https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-musl.tar.gz
+          tar xf uv-x86_64-unknown-linux-musl.tar.gz
+      - if: ${{ !inputs.ref }}
+        name: Upload uv
+        uses: actions/upload-artifact@v4
+        with:
+          name: uv
+          path: ./uv-x86_64-unknown-linux-musl/uv
+
+  pypi-wrong-name:
+    name: Publish wrong name
+    needs: get-binary-linux
+    runs-on: ubuntu-latest
+    # Environment and permissions trusted publishing.
+    environment:
+      # Create this environment in the GitHub repository under Settings -> Environments
+      name: release
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download uv
+        uses: actions/download-artifact@v4
+        with:
+          name: uv
+      - name: Prepare uv
+        run: chmod +x ./uv
+
+      - run: ./uv build
+      # Check that basic features work and we didn't miss to include crucial files
+      - name: Smoke test (wheel)
+        run: ./uv run --isolated --no-project -p 3.13 --with dist/*.whl tests/smoke_test.py
+      - name: Smoke test (source distribution)
+        run: ./uv run --isolated --no-project -p 3.13 --with dist/*.tar.gz tests/smoke_test.py
+      - run: ./uv publish --trusted-publishing always
+        # The part below with testpypi only because it's a demo repo, remove the next two lines for production usage
+        env:
+          UV_PUBLISH_URL: https://test.pypi.org/legacy/
+
+  # Fails because the workflow name is wrong, but without `--trusted-publishing always`
+  pypi-wrong-name-no-trusted-publishing:
+    name: Publish wrong name alt
+    needs: get-binary-linux
+    runs-on: ubuntu-latest
+    # Environment and permissions trusted publishing.
+    environment:
+      # Create this environment in the GitHub repository under Settings -> Environments
+      name: release
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download uv
+        uses: actions/download-artifact@v4
+        with:
+          name: uv
+      - name: Prepare uv
+        run: chmod +x ./uv
+
+      - uses: astral-sh/setup-uv@v3
+      - run: ./uv build
+      # Check that basic features work and we didn't miss to include crucial files
+      - name: Smoke test (wheel)
+        run: ./uv run --isolated --no-project -p 3.13 --with dist/*.whl tests/smoke_test.py
+      - name: Smoke test (source distribution)
+        run: ./uv run --isolated --no-project -p 3.13 --with dist/*.tar.gz tests/smoke_test.py
+      - run: ./uv publish
+        # The part below with testpypi only because it's a demo repo, remove the next two lines for production usage
+        env:
+          UV_PUBLISH_URL: https://test.pypi.org/legacy/
+
+  # Fails because the permission section is missing
+  pypi-missing-permissions:
+    name: Publish missing permissions
+    needs: get-binary-linux
+    runs-on: ubuntu-latest
+    # Environment trusted publishing.
+    environment:
+      # Create this environment in the GitHub repository under Settings -> Environments
+      name: release
+    # Here the permission section is skipped
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download uv
+        uses: actions/download-artifact@v4
+        with:
+          name: uv
+      - name: Prepare uv
+        run: chmod +x ./uv
+
+      - run: ./uv build
+      # Check that basic features work and we didn't miss to include crucial files
+      - name: Smoke test (wheel)
+        run: ./uv run --isolated --no-project -p 3.13 --with dist/*.whl tests/smoke_test.py
+      - name: Smoke test (source distribution)
+        run: ./uv run --isolated --no-project -p 3.13 --with dist/*.tar.gz tests/smoke_test.py
+      - run: ./uv publish --trusted-publishing always
+        # The part below with testpypi only because it's a demo repo, remove the next two lines for production usage
+        env:
+          UV_PUBLISH_URL: https://test.pypi.org/legacy/
+
+  # Fails because the environment section is missing
+  pypi-missing-environment:
+    name: Publish missing environment
+    needs: get-binary-linux
+    runs-on: ubuntu-latest
+    # Here the environment section is skipped
+    # Permissions trusted publishing.
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download uv
+        uses: actions/download-artifact@v4
+        with:
+          name: uv
+      - name: Prepare uv
+        run: chmod +x ./uv
+
+      - uses: astral-sh/setup-uv@v3
+      - run: ./uv build
+      # Check that basic features work and we didn't miss to include crucial files
+      - name: Smoke test (wheel)
+        run: ./uv run --isolated --no-project -p 3.13 --with dist/*.whl tests/smoke_test.py
+      - name: Smoke test (source distribution)
+        run: ./uv run --isolated --no-project -p 3.13 --with dist/*.tar.gz tests/smoke_test.py
+      - run: ./uv publish --trusted-publishing always
+        # The part below with testpypi only because it's a demo repo, remove the next two lines for production usage
+        env:
+          UV_PUBLISH_URL: https://test.pypi.org/legacy/
