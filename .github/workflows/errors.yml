@@ -1,6 +1,8 @@
 # Test the error messages when the trusted publishing configuration is incorrect
 name: Release wrong name
 
+permissions: {}
+
 on:
   workflow_dispatch:
     inputs:
@@ -15,20 +17,21 @@ jobs:
     name: Get binary
     steps:
       - if: ${{ inputs.ref }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: "astral-sh/uv"
           ref: ${{ inputs.ref }}
+          persist-credentials: false
 
       - if: ${{ inputs.ref }}
-        uses: rui314/setup-mold@v1
+        uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # staging
       - if: ${{ inputs.ref }}
         name: Setup musl
         run: |
           sudo apt-get install musl-tools
           rustup target add x86_64-unknown-linux-musl
       - if: ${{ inputs.ref }}
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
       - if: ${{ inputs.ref }}
         name: Build uv
         run: cargo build --target x86_64-unknown-linux-musl
@@ -38,7 +41,7 @@ jobs:
 
       - if: ${{ inputs.ref }}
         name: Upload uv
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: uv
           path: ./target/x86_64-unknown-linux-musl/debug/uv
@@ -49,7 +52,7 @@ jobs:
           tar xf uv-x86_64-unknown-linux-musl.tar.gz
       - if: ${{ !inputs.ref }}
         name: Upload uv
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: uv
           path: ./uv-x86_64-unknown-linux-musl/uv
@@ -65,9 +68,11 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Download uv
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: uv
       - name: Prepare uv
@@ -96,15 +101,17 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Download uv
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: uv
       - name: Prepare uv
         run: chmod +x ./uv
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@caf0cab7a618c569241d31dcd442f54681755d39 # v3.2.4
       - run: ./uv build
       # Check that basic features work and we didn't miss to include crucial files
       - name: Smoke test (wheel)
@@ -127,9 +134,11 @@ jobs:
       name: release
     # Here the permission section is skipped
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Download uv
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: uv
       - name: Prepare uv
@@ -156,15 +165,17 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Download uv
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: uv
       - name: Prepare uv
         run: chmod +x ./uv
 
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@caf0cab7a618c569241d31dcd442f54681755d39 # v3.2.4
       - run: ./uv build
       # Check that basic features work and we didn't miss to include crucial files
       - name: Smoke test (wheel)
