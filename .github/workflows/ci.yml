@@ -22,9 +22,11 @@ jobs:
         run: uv run ruff check .
       - name: Ruff format
         run: uv run ruff format --diff .
+      - name: Install Prettier
+        run: npm ci --ignore-scripts
       # This isn't a general Python lint, this style is just used in this repository
       - name: Prettier format
-        run: npx prettier --prose-wrap always --check "**/*.md"
+        run: ./node_modules/.bin/prettier --prose-wrap always --check "**/*.md"
 
   test:
     name: Run tests
