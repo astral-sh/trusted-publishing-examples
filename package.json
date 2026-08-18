@@ -1,0 +1,7 @@
+{
+  "name": "trusted-publishing-examples-dev",
+  "private": true,
+  "devDependencies": {
+    "prettier": "3.9.6"
+  }
+}
