@@ -22,6 +22,9 @@ jobs:
         run: uv run ruff check .
       - name: Ruff format
         run: uv run ruff format --diff .
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ">=24.15.0 <25"
       - name: Install Prettier
         run: npm ci --ignore-scripts
       # This isn't a general Python lint, this style is just used in this repository
