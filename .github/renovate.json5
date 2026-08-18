@@ -1,5 +1,18 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["github>astral-sh/renovate-config"],
-  enabledManagers: ["npm"],
+  enabledManagers: ["npm", "github-actions"],
+  packageRules: [
+    {
+      matchManagers: ["github-actions"],
+      enabled: false,
+    },
+    {
+      matchManagers: ["github-actions"],
+      matchFileNames: [".github/workflows/ci.yml"],
+      matchDepNames: ["node"],
+      matchDepTypes: ["uses-with"],
+      enabled: true,
+    },
+  ],
 }
